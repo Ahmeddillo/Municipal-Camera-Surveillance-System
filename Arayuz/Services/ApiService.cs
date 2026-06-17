@@ -40,7 +40,7 @@ namespace BelediyeDashboard.Services
             };
         }
 
-        // ── Mevcut metodlar (değişmedi) ──
+        // -- Mevcut metodlar (değişmedi) --
 
         public async Task<List<Kamera>> GetKameralarAsync(CancellationToken ct = default)
         {
@@ -110,7 +110,8 @@ namespace BelediyeDashboard.Services
             }
         }
 
-        // ── HAVA DURUMU METODLARI ──
+        // -- HAVA DURUMU METODLARI --
+        
 
         public async Task<HavaDurumu?> GetSonHavaDurumuAsync(int kameraId, CancellationToken ct = default)
         {
