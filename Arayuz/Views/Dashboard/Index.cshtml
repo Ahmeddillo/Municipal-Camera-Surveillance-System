@@ -712,7 +712,7 @@
         Chart.defaults.font.family = "'DM Sans', sans-serif";
         Chart.defaults.color = '#64748B';
 
-        // ── Hava durumu sabit verileri ──
+        // -- Hava durumu sabit verileri --
         const HAVA_IKON = {
             "Gunesli":          "☀",
             "Parcali Bulutlu":  "⛅",
@@ -732,7 +732,7 @@
             "Kirli Lens":       "#f87171"
         };
 
-        // ── Canlı Güncelleme ──
+        // -- Canlı Güncelleme --
         async function canliVerileriGuncelle() {
             try {
                 const res    = await fetch(LOCAL_API_URL);
@@ -766,7 +766,7 @@
             }
         }
 
-        // ── Saatlik Grafik ──
+        // -- Saatlik Grafik --
         async function saatlikGrafikYukle(kameraId) {
             try {
                 const res = await fetch(`/Dashboard/SaatlikGrafik?kameraId=${kameraId}`);
@@ -822,7 +822,7 @@
             } catch (e) { console.warn('Saatlik grafik yüklenemedi:', e); }
         }
 
-        // ── Haftalık Trend ──
+        // -- Haftalık Trend --
         async function haftalikGrafikYukle(kameraId) {
             try {
                 const res = await fetch(`/Dashboard/HaftalikGrafik?kameraId=${kameraId}`);
@@ -864,7 +864,7 @@
             } catch (e) { console.warn('Haftalık grafik yüklenemedi:', e); }
         }
 
-        // ── Hava Durumu Önizleme (tüm kameralar) ──
+        // -- Hava Durumu Önizleme (tüm kameralar) --
         async function havaOnizlemeGuncelle() {
             const konteyner = document.getElementById('hava-onizleme-listesi');
             try {
@@ -929,7 +929,7 @@
             }
         }
 
-        // ── Sayfa Başlangıç ──
+        // -- Sayfa Başlangıç --
         document.addEventListener('DOMContentLoaded', () => {
             const varsayilanId = @ilkKameraId;
 
@@ -949,7 +949,7 @@
             }, 60000);
         });
 
-        // ── Plaka Tanıma ──
+        // -- Plaka Tanıma --
         function plakaDrop(e) {
             e.preventDefault();
             document.getElementById('plaka-drop-alan').style.borderColor = 'var(--border-color)';
@@ -1035,7 +1035,7 @@
             }
         }
 
-        // ── Araç Sayım ──
+        // -- Araç Sayım --
         let _aracEventSource = null;
 
         function aracSayTemizle() {
@@ -1172,7 +1172,7 @@
             };
         }
 
-        // ── Trafik Yoğunluk ──
+        // -- Trafik Yoğunluk --
                 let _trafikEventSource = null;
         let _trafikGecmis      = [];
 
