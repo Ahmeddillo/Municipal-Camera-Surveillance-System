@@ -157,7 +157,7 @@ namespace BelediyeDashboard.Models
         public string SonGuncelleme { get; set; } = DateTime.Now.ToString("HH:mm:ss");
     }
 
-    // ── Plaka Tanıma Modelleri ──
+    // -- Plaka Tanıma Modelleri --
 
     public class PlakaIslemSonucu
     {
@@ -171,7 +171,7 @@ namespace BelediyeDashboard.Models
         public string Zaman { get; set; } = string.Empty;
     }
 
-    // ── Araç Sayım Kısmı - ApiModels.cs ──
+    // -- Araç Sayım Kısmı - ApiModels.cs --
 
     public class AracSayimSonucu
     {
@@ -188,7 +188,7 @@ namespace BelediyeDashboard.Models
         public string Kaynak { get; set; } = string.Empty;
     }
 
-    // ── Trafik Yoğunluk Kısmı - ApiModels.cs ──
+    // -- Trafik Yoğunluk Kısmı - ApiModels.cs --
     public class TrafikYogunlukSonucu
     {
         [JsonPropertyName("ogreniliyor")]
