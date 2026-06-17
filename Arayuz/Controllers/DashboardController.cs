@@ -19,7 +19,7 @@ namespace BelediyeDashboard.Controllers
             _logger = logger;
         }
 
-        // ── Ana Dashboard (İlk yükleme için SSR) ──
+        // -- Ana Dashboard (İlk yükleme için SSR) --
         public async Task<IActionResult> Index()
         {
             var vm = new DashboardViewModel();
@@ -64,7 +64,7 @@ namespace BelediyeDashboard.Controllers
             return View(vm);
         }
 
-        // ── AJAX: Tek kamera anlık veri ──
+        // -- Tek kamera anlık veri --
         [HttpGet]
         public async Task<IActionResult> CanliVeri(int kameraId)
         {
@@ -81,7 +81,7 @@ namespace BelediyeDashboard.Controllers
             });
         }
 
-        // ── AJAX: Saatlik grafik verisi ──
+        // -- Saatlik grafik verisi --
         [HttpGet]
         public async Task<IActionResult> SaatlikGrafik(int kameraId, string? tarih = null)
         {
@@ -97,7 +97,7 @@ namespace BelediyeDashboard.Controllers
             return Json(new { labels, data, pikData, toplamKisi = rapor.ToplamKisi });
         }
 
-        // ── AJAX: Haftalık rapor ──
+        // -- Haftalık rapor --
         [HttpGet]
         public async Task<IActionResult> HaftalikGrafik(int kameraId)
         {
@@ -115,7 +115,7 @@ namespace BelediyeDashboard.Controllers
             return Json(new { labels, data });
         }
 
-        // ── AJAX: Tüm kameraların anlık durumu ──
+        // -- Tüm kameraların anlık durumu --
         [HttpGet]
         public async Task<IActionResult> TumKameralarDurum()
         {
@@ -140,7 +140,7 @@ namespace BelediyeDashboard.Controllers
             }
         }
 
-        // ── HAVA DURUMU: Detay sayfası (SSR) ──
+        // -- HAVA DURUMU: Detay sayfası (SSR) --
         [HttpGet]
         public async Task<IActionResult> HavaDurumu()
         {
@@ -148,7 +148,7 @@ namespace BelediyeDashboard.Controllers
             return View(tumKameralar ?? new List<TumKameralarHavaDurumu>());
         }
 
-        // ── HAVA DURUMU: AJAX - tek kamera son durum ──
+        // -- HAVA DURUMU: AJAX - tek kamera son durum --
         [HttpGet]
         public async Task<IActionResult> HavaDurumuCanli(int kameraId = 1)
         {
@@ -161,7 +161,7 @@ namespace BelediyeDashboard.Controllers
             });
         }
 
-        // ── HAVA DURUMU: AJAX - günlük geçmiş ──
+        // -- HAVA DURUMU: AJAX - günlük geçmiş --
         [HttpGet]
         public async Task<IActionResult> HavaDurumuGecmis(int kameraId = 1, string? tarih = null)
         {
@@ -179,7 +179,7 @@ namespace BelediyeDashboard.Controllers
             });
         }
 
-        // ── PLAKA: Upload modal action ──
+        // -- PLAKA: Upload modal action --
         [HttpGet]
         public IActionResult Plaka()
         {
