@@ -28,11 +28,11 @@ import threading
 from database import DatabaseManager
 
 db = DatabaseManager({
-    "host":     ".",
+    "host":     "****************",
     "database": "belediye_kamera_db",
-    "user":     ".",
-    "password": ".",
-    "port":     .
+    "user":     "****************",
+    "password": "****************",
+    "port":     ****************
 })
 db.connect()
 
