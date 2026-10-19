@@ -1,153 +1,155 @@
-# 🏙️ Belediye Kamera Takip Sistemi
-<img width="812" height="575" alt="Ekran görüntüsü 2026-06-04 212336" src="https://github.com/user-attachments/assets/9e792071-d410-4aa6-8cf0-ddf49f56de23" />
+# 🏙️ Municipal Camera Surveillance System
+<img width="812" height="575" alt="Screenshot 2026-06-04 212336" src="https://github.com/user-attachments/assets/9e792071-d410-4aa6-8cf0-ddf49f56de23" />
 
-Belediye altyapısına entegre edilmek üzere tasarlanmış, yapay zeka destekli çok modüllü kent kamera analiz platformu. YouTube canlı yayınları ve RTSP kameralardan kişi sayımı, araç takibi, trafik yoğunluk analizi, hava durumu tespiti ve plaka okuma işlevlerini merkezi bir API üzerinden sunar.
-
----
-
-## 📋 İçindekiler
-
-- [Sistem Özeti](#sistem-özeti)
-- [Özellikler](#özellikler)
-- [Proje Yapısı](#proje-yapısı)
-- [Kullanılan Teknolojiler](#kullanılan-teknolojiler)
-- [Kurulum](#kurulum)
-- [Veritabanı Kurulumu](#veritabanı-kurulumu)
-- [Çalıştırma](#çalıştırma)
-- [API Dokümantasyonu](#api-dokümantasyonu)
-- [Veritabanı Şeması](#veritabanı-şeması)
+An AI-powered multi-module urban camera analysis platform designed to be integrated into municipal infrastructure. It offers people counting, vehicle tracking, traffic density analysis, weather condition detection, and automatic license plate recognition (ANPR) from YouTube live streams and RTSP cameras via a central API.
 
 ---
 
-## Sistem Özeti
+## 📋 Table of Contents
 
-Bu sistem, belediye kamera altyapısını (RTSP) veya halka açık YouTube canlı yayınlarını kaynak olarak kullanarak; kişi sayımı, araç takibi, trafik yoğunluğu, hava/görüş koşulları ve plaka tanıma işlemlerini gerçek zamanlı olarak yapar. Tüm veriler PostgreSQL'e kaydedilerek dakikalık/saatlik/günlük raporlar üretilebilir. Arayüz (HTML/C#) ve API birbirinden bağımsız çalışır.
-
----
-
-## Özellikler
-
-### 👥 Kişi Sayımı
-
-**`1_yt_kisisayma.py`** — YouTube & RTSP kişi sayacı (tam özellikli)
-- YOLOv8 ile gerçek zamanlı insan tespiti
-- YouTube canlı yayınlarında `yt-dlp` + `ffmpeg` pipeline'ı
-- RTSP kamera desteği (TCP transport, otomatik yeniden bağlanma)
-- Dakikalık istatistik kayıtları (anlık, ortalama, maksimum, minimum)
-- Her 10 saniyede bir anlık ölçüm, dakika sonunda toplu kayıt
-- Sinyal yönetimi (SIGINT/SIGTERM) ile güvenli kapatma
-
-**`2_yt_yari_kisisayma.py`** — Yarı optimize sayaç (hafıza dostu)
-
-**`3_ornek_mobes_kisisayma.py`** — Örnek MOBESE kamera entegrasyonu
-
-**`4_ornek_mobes_Idli_kisisayma.py`** — ID tabanlı (re-ID) kişi sayımı (aynı kişiyi tekrar saymama)
-
-**`5_opt_yonlu_Idli_kisisayma.py`** — Yön bazlı (giren/çıkan) optimize sayaç
-
-### 🌤️ Hava Durumu Tespiti
-
-**`6_havadurumu_tespiti_img.py`** — Fotoğraf üzerinde hava durumu analizi
-- OpenAI CLIP modeli (`clip-vit-base-patch32`) ile sıfır-shot sınıflandırma
-- 7 hava durumu kategorisi: Güneşli, Parçalı Bulutlu, Bulutlu, Yağmurlu, Karlı/Sisli, Gece, Görüş Kısıtlı/Kirli Lens
-- Terminal çıktısında yüzdesel karar dağılımı
-- Kamera lens kirliliği ve görüş engeli de tespit edilir
-
-**`7_havadurumu_tespiti_vid.py`** — Video/canlı akış üzerinde sürekli hava durumu takibi
-
-### 🚗 Araç Takibi ve Sayımı
-
-**`9_aracTakip.py`** — Gerçek zamanlı araç sayacı
-- Özel eğitilmiş YOLOv8 modeli (`arac2.pt`)
-- RTSP, YouTube ve yerel video desteği (`yt-dlp` ile çözümleme)
-- Araç tipine göre ayrı sınıflandırma ve sayım
-- Ekranda kare bazlı araç sayısı paneli
-- Oturum sonunda araç tipi bazlı özet rapor
-- Çıktı videosu kaydetme seçeneği
-
-### 🚦 Trafik Yoğunluk Analizi
-
-**`10_trafik_yogunluk.py`** — Arka plan çıkarma tabanlı trafik analizi
-- YOLOv8 modeli gerektirmez — tamamen görüntü işleme ile çalışır
-- Otomatik arka plan öğrenme (ilk 30 kare)
-- Piksel değişim oranı ile `SAKIN / NORMAL / YOGUN` üç seviyeli sınıflandırma
-- ROI (İlgilenilen Bölge) ayarı ile yol alanına odaklanma
-- Sağ alt köşede gerçek zamanlı yoğunluk grafiği
-- CLAHE + morfolojik filtre ile gürültü temizleme
-
-### 🔢 Plaka Okuma (ANPR)
-
-**`8_plaka_okuma.py`** — Türkiye plakaları için ANPR sistemi
-- İki aşamalı YOLOv8 pipeline: plaka tespiti (`plaka_bulma.pt`) + karakter tanıma (`plaka_okuma.pt`)
-- Görüntü ön işleme: CLAHE, bilateral filtre, unsharp masking, adaptif eşikleme
-- Akıllı OCR hata düzeltme (harf↔rakam karışıklığı: `0↔O`, `1↔I`, `8↔B`)
-- Türkiye'nin 81 il koduna göre format doğrulama
-- Türkçe karakter yasağı kontrolü (İ, Ş, Ç, Ğ, Ü, Ö, Q, W, X)
-- Sonuçları JSON dosyasına dışa aktarma
-
-### 🌐 Merkezi API
-
-**`api.py`** — FastAPI tabanlı 1139 satırlık ana hub
-- Çoklu kamera yönetimi (PostgreSQL'de kayıtlı)
-- Dakikalık/saatlik/günlük raporlar
-- Canlı MJPEG video stream (araç + trafik)
-- SSE (Server-Sent Events) ile gerçek zamanlı istatistik akışı
-- Thread tabanlı `StreamWorker` ve `TrafikWorker` mimarisi
-- Plaka işleme REST endpoint'i (dosya yükleme)
-- Hava durumu geçmişi ve tüm kameralar için tek sorgu
-- CSV/JSON veri dışa aktarma
-- CORS middleware (web/mobil uyumluluğu)
+- [System Overview](#system-overview)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Technologies Used](#technologies-used)
+- [Installation](#installation)
+- [Database Setup](#database-setup)
+- [Running the System](#running-the-system)
+- [API Documentation](#api-documentation)
+- [Database Schema](#database-schema)
+- [Architecture Overview](#architecture-overview)
+- [License](#license)
 
 ---
 
-## Proje Yapısı
+## System Overview
+
+This system uses municipal camera infrastructure (RTSP) or public YouTube live streams as sources to perform real-time people counting, vehicle tracking, traffic density estimation, weather/visibility condition detection, and license plate recognition. All data is saved to PostgreSQL to generate minute/hourly/daily reports. The interface (HTML/C#) and API operate independently of each other.
+
+---
+
+## Features
+
+### 👥 People Counting
+
+**`1_yt_kisisayma.py`** — YouTube & RTSP people counter (full-featured)
+- Real-time human detection with YOLOv8
+- `yt-dlp` + `ffmpeg` pipeline for YouTube live streams
+- RTSP camera support (TCP transport, automatic reconnection)
+- Minute-based statistical records (instantaneous, average, maximum, minimum)
+- Instant measurement every 10 seconds, batch recording at the end of each minute
+- Graceful shutdown with signal management (SIGINT/SIGTERM)
+
+**`2_yt_yari_kisisayma.py`** — Semi-optimized counter (memory-friendly)
+
+**`3_ornek_mobes_kisisayma.py`** — Sample CCTV/MOBESE camera integration
+
+**`4_ornek_mobes_Idli_kisisayma.py`** — ID-based (re-ID) people counting (prevents recounting the same person)
+
+**`5_opt_yonlu_Idli_kisisayma.py`** — Direction-based (entry/exit) optimized counter
+
+### 🌤️ Weather Condition Detection
+
+**`6_havadurumu_tespiti_img.py`** — Weather condition analysis on images
+- Zero-shot classification with OpenAI CLIP model (`clip-vit-base-patch32`)
+- 7 weather categories: Sunny, Partly Cloudy, Cloudy, Rainy, Snowy/Foggy, Night, Low Visibility/Dirty Lens
+- Percentage-based decision distribution in terminal output
+- Camera lens smudging and view obstruction are also detected
+
+**`7_havadurumu_tespiti_vid.py`** — Continuous weather tracking on video/live stream
+
+### 🚗 Vehicle Tracking and Counting
+
+**`9_aracTakip.py`** — Real-time vehicle counter
+- Custom trained YOLOv8 model (`arac2.pt`)
+- RTSP, YouTube, and local video support (resolved with `yt-dlp`)
+- Separate classification and counting according to vehicle type
+- Frame-based vehicle count overlay panel
+- Summary report based on vehicle type at the end of the session
+- Option to save output video
+
+### 🚦 Traffic Density Analysis
+
+**`10_trafik_yogunluk.py`** — Background subtraction-based traffic analysis
+- Does not require a YOLOv8 model — works entirely with computer vision
+- Automatic background learning (first 30 frames)
+- Three-level classification (`CLEAR / NORMAL / HEAVY`) based on pixel change ratio
+- Focus on the road area using ROI (Region of Interest) settings
+- Real-time density chart in the bottom right corner
+- Noise cleaning with CLAHE + morphological filter
+
+### 🔢 License Plate Recognition (ANPR)
+
+**`8_plaka_okuma.py`** — ANPR system for Turkish license plates
+- Two-stage YOLOv8 pipeline: license plate detection (`plaka_bulma.pt`) + character recognition (`plaka_okuma.pt`)
+- Image preprocessing: CLAHE, bilateral filter, unsharp masking, adaptive thresholding
+- Smart OCR error correction (letter↔digit confusion: `0↔O`, `1↔I`, `8↔B`)
+- Format validation according to Turkey's 81 city province codes
+- Forbidden Turkish character check (İ, Ş, Ç, Ğ, Ü, Ö, Q, W, X)
+- Exporting results to a JSON file
+
+### 🌐 Central API
+
+**`api.py`** — FastAPI-based 1139-line main hub
+- Multi-camera management (registered in PostgreSQL)
+- Minute/hourly/daily reports
+- Live MJPEG video stream (vehicles + traffic)
+- Real-time statistics stream with SSE (Server-Sent Events)
+- Thread-based `StreamWorker` and `TrafikWorker` architecture
+- License plate processing REST endpoint (file upload)
+- Weather history and single query for all cameras
+- CSV/JSON data export
+- CORS middleware (web/mobile compatibility)
+
+---
+
+## Project Structure
 
 ```
 Belediye-Kamera-Takip-Sistemi/
 │
-├── api.py                          # Ana FastAPI uygulaması (merkezi hub)
-├── database.py                     # Veritabanı bağlantı ve işlem sınıfı
-├── database_test.py                # Veritabanı bağlantı test scripti
+├── api.py                          # Main FastAPI application (central hub)
+├── database.py                     # Database connection and operation class
+├── database_test.py                # Database connection test script
 │
-├── 1_yt_kisisayma.py               # YouTube/RTSP kişi sayacı (tam özellikli)
-├── 2_yt_yari_kisisayma.py          # Yarı optimize kişi sayacı
-├── 3_ornek_mobes_kisisayma.py      # MOBESE kamera entegrasyon örneği
-├── 4_ornek_mobes_Idli_kisisayma.py # ID tabanlı kişi sayacı (re-ID)
-├── 5_opt_yonlu_Idli_kisisayma.py   # Yön bazlı optimize sayaç
+├── 1_yt_kisisayma.py               # YouTube/RTSP people counter (full-featured)
+├── 2_yt_yari_kisisayma.py          # Semi-optimized people counter
+├── 3_ornek_mobes_kisisayma.py      # Sample MOBESE camera integration example
+├── 4_ornek_mobes_Idli_kisisayma.py # ID-based people counter (re-ID)
+├── 5_opt_yonlu_Idli_kisisayma.py   # Direction-based optimized counter
 │
-├── 6_havadurumu_tespiti_img.py     # Fotoğrafta hava durumu tespiti (CLIP)
-├── 7_havadurumu_tespiti_vid.py     # Video/canlı akışta hava durumu tespiti
+├── 6_havadurumu_tespiti_img.py     # Image weather detection (CLIP)
+├── 7_havadurumu_tespiti_vid.py     # Video/live stream weather detection
 │
-├── 8_plaka_okuma.py                # Türk plaka ANPR sistemi
-├── 9_aracTakip.py                  # Araç sayacı ve takip
-├── 10_trafik_yogunluk.py           # Arka plan çıkarma ile trafik analizi
+├── 8_plaka_okuma.py                # Turkish license plate ANPR system
+├── 9_aracTakip.py                  # Vehicle counter and tracker
+├── 10_trafik_yogunluk.py           # Traffic analysis with background subtraction
 │
-├── Arayuz/                         # Web arayüzü (HTML/C#)
+├── Arayuz/                         # Web interface (HTML/C#)
 └── README.md
 ```
 
 ---
 
-## Kullanılan Teknolojiler
+## Technologies Used
 
-| Katman | Teknoloji |
-|--------|-----------|
-| Dil | Python 3.x |
-| Görüntü İşleme | OpenCV, NumPy |
-| Nesne/Araç/Plaka Tespiti | YOLOv8 (Ultralytics) |
-| Görüntü Sınıflandırma | Hugging Face Transformers (CLIP) |
-| Video Stream Çözümleme | yt-dlp, ffmpeg |
+| Layer | Technology |
+|-------|------------|
+| Language | Python 3.x |
+| Image Processing | OpenCV, NumPy |
+| Object/Vehicle/Plate Detection | YOLOv8 (Ultralytics) |
+| Image Classification | Hugging Face Transformers (CLIP) |
+| Video Stream Demuxing | yt-dlp, ffmpeg |
 | Web API | FastAPI + Uvicorn |
-| Gerçek Zamanlı Stream | MJPEG (video), SSE (istatistik) |
-| Veritabanı | PostgreSQL |
-| DB Sürücüsü | psycopg 3 |
-| Web Arayüzü | HTML + C# |
+| Real-Time Streaming | MJPEG (video), SSE (statistics) |
+| Database | PostgreSQL |
+| DB Driver | psycopg 3 |
+| Web Interface | HTML + C# |
 
 ---
 
-## Kurulum
+## Installation
 
-### Gereksinimler
+### Prerequisites
 
 ```bash
 pip install ultralytics opencv-python numpy
@@ -156,33 +158,33 @@ pip install transformers torch pillow
 pip install yt-dlp
 ```
 
-> **Not:** `ffmpeg`'in sistem PATH'inde kurulu olması gerekir. İndir: https://ffmpeg.org/download.html
+> **Note:** `ffmpeg` must be installed in system PATH. Download: https://ffmpeg.org/download.html
 
-### Model Dosyaları
+### Model Files
 
-Aşağıdaki model dosyalarını proje kök dizinine yerleştirin:
+Place the following model files in the project root directory:
 
-| Dosya | Kullanım |
-|-------|----------|
-| `yolov8n.pt` | Kişi sayımı (YOLO n modeli) |
-| `arac2.pt` | Araç tespiti ve sayımı |
-| `plaka_bulma.pt` | Araçtaki plakayı bul |
-| `plaka_okuma.pt` | Plakadaki karakterleri oku |
+| File | Usage |
+|------|-------|
+| `yolov8n.pt` | People counting (YOLO nano model) |
+| `arac2.pt` | Vehicle detection and counting |
+| `plaka_bulma.pt` | Find license plate on vehicle |
+| `plaka_okuma.pt` | Read characters on license plate |
 
 ---
 
-## Veritabanı Kurulumu
+## Database Setup
 
-### PostgreSQL'de veritabanı oluşturun:
+### Create a database in PostgreSQL:
 
 ```sql
 CREATE DATABASE belediye_kamera_db;
 ```
 
-### Tablolar sistem ilk çalıştığında otomatik oluşturulur. Elle oluşturmak için:
+### Tables are automatically created when the system runs for the first time. To create them manually:
 
 ```sql
--- Kamera tanımları
+-- Camera definitions
 CREATE TABLE kameralar (
     id SERIAL PRIMARY KEY,
     ad VARCHAR(100),
@@ -192,7 +194,7 @@ CREATE TABLE kameralar (
     olusturma_tarihi TIMESTAMP DEFAULT NOW()
 );
 
--- Dakikalık ölçümler
+-- Minute measurements
 CREATE TABLE dakikalik_olculer (
     id SERIAL PRIMARY KEY,
     kamera_id INTEGER REFERENCES kameralar(id),
@@ -205,7 +207,7 @@ CREATE TABLE dakikalik_olculer (
     detaylar JSONB
 );
 
--- Anlık ölçümler
+-- Instant measurements
 CREATE TABLE anlik_olcumler (
     id SERIAL PRIMARY KEY,
     kamera_id INTEGER REFERENCES kameralar(id),
@@ -213,7 +215,7 @@ CREATE TABLE anlik_olcumler (
     anlik_kisi INTEGER
 );
 
--- Hava durumu kayıtları
+-- Weather records
 CREATE TABLE hava_durumu (
     id SERIAL PRIMARY KEY,
     kamera_id INTEGER REFERENCES kameralar(id),
@@ -223,191 +225,191 @@ CREATE TABLE hava_durumu (
 );
 ```
 
-### Bağlantı yapılandırması:
+### Connection Configuration:
 
-Projede veritabanı bağlantısı `database.py` ve `api.py` içinde tanımlıdır. Kendi sunucunuza göre güncelleyin:
+The database connection in the project is defined inside `database.py` and `api.py`. Update it according to your own server:
 
 ```python
 PG_CONFIG = {
     'host': 'localhost',
     'database': 'belediye_kamera_db',
     'user': 'postgres',
-    'password': 'SIFRENIZ',
+    'password': 'YOUR_PASSWORD',
     'port': 5432
 }
 ```
 
 ---
 
-## Çalıştırma
+## Running the System
 
-### 1. API Sunucusunu Başlatın
+### 1. Start the API Server
 
 ```bash
 python -m uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Swagger dokümantasyonu: `http://localhost:8000/docs`
+Swagger documentation: `http://localhost:8000/docs`
 
-### 2. Sisteme Kamera Ekleyin
+### 2. Add Camera to System
 
-API çalışırken bir YouTube canlı yayını veya RTSP kamera ekleyin:
+Add a YouTube live stream or RTSP camera while the API is running:
 
 ```bash
-# YouTube canlı yayını eklemek için:
+# To add YouTube live stream:
 curl -X POST "http://localhost:8000/youtube-ekle?ad=Merkez+Meydani&konum=Merkez&youtube_url=https://youtube.com/watch?v=..."
 
-# Gerçek RTSP kamera:
-# rtsp_url alanını kamera IP adresiyle güncelleyin
+# Real RTSP camera:
+# Update the rtsp_url field with the camera IP address
 ```
 
-### 3. Kişi Sayımını Başlatın
+### 3. Start People Counting
 
 ```bash
-# YouTube'dan sayım:
+# Counting from YouTube:
 python 1_yt_kisisayma.py
 
-# Kaynak tipini dosyada değiştirmek için:
-# KAYNAK_TIPI = "youtube"  # veya "rtsp"
+# To change source type in the file:
+# KAYNAK_TIPI = "youtube"  # or "rtsp"
 # YOUTUBE_URL = "https://www.youtube.com/watch?v=..."
 # RTSP_URL = "rtsp://kamera.belediye.gov.tr:554/stream"
-# KAMERA_ID = 1  # Veritabanındaki kamera ID'si
+# KAMERA_ID = 1  # Camera ID in database
 ```
 
-### 4. Araç Takibini Başlatın
+### 4. Start Vehicle Tracking
 
 ```bash
 python 9_aracTakip.py
-# Program başlayınca RTSP veya YouTube URL girmeniz istenir
+# You will be asked to enter RTSP or YouTube URL when the program starts
 ```
 
-### 5. Trafik Yoğunluk Analizini Başlatın
+### 5. Start Traffic Density Analysis
 
 ```bash
 python 10_trafik_yogunluk.py
-# Program başlayınca HLS (m3u8) veya RTSP URL girmeniz istenir
+# You will be asked to enter HLS (m3u8) or RTSP URL when the program starts
 ```
 
-### 6. Hava Durumu Tespiti
+### 6. Weather Condition Detection
 
 ```bash
-# Fotoğraf üzerinde:
+# On an image:
 python 6_havadurumu_tespiti_img.py
-# FOTOGRAF_YOLU değişkenini dosyada güncelleyin
+# Update FOTOGRAF_YOLU variable in the file
 
-# Video/canlı akış üzerinde:
+# On video/live stream:
 python 7_havadurumu_tespiti_vid.py
 ```
 
-### 7. Plaka Okuma
+### 7. License Plate Recognition
 
 ```bash
 python 8_plaka_okuma.py
-# TEST_FOLDER klasörüne test resimlerini koyun
-# Sonuçlar results/plaka_sonuclari.json dosyasına yazılır
+# Put test images into TEST_FOLDER directory
+# Results will be written to results/plaka_sonuclari.json file
 ```
 
 ---
 
-## API Dokümantasyonu
+## API Documentation
 
-### Kamera Yönetimi
+### Camera Management
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/kameralar` | Tüm aktif kameraları listele |
-| GET | `/api/kameralar` | API formatında kamera listesi |
-| POST | `/youtube-ekle` | Yeni YouTube/RTSP kamera ekle |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/kameralar` | List all active cameras |
+| GET | `/api/kameralar` | Camera list in API format |
+| POST | `/youtube-ekle` | Add new YouTube/RTSP camera |
 
-### Kişi Sayımı
+### People Counting
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/son-dakika/{kamera_id}` | Son dakika ölçümü |
-| GET | `/api/son-dakika?kamera_id=1` | API formatında son dakika |
-| GET | `/canli/{kamera_id}` | Son 10 anlık ölçüm |
-| GET | `/api/canli-veri?kamera_id=1` | API formatında canlı veri |
-| GET | `/tum-dakikalar/{kamera_id}` | Tüm dakika kayıtları |
-| GET | `/saatlik-rapor/{kamera_id}?tarih=2025-01-01` | Saatlik özet |
-| GET | `/gunluk-rapor/{kamera_id}?baslangic=...&bitis=...` | Günlük rapor |
-| GET | `/veri-export/{kamera_id}?format=csv` | CSV/JSON dışa aktarım |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/son-dakika/{kamera_id}` | Last minute measurement |
+| GET | `/api/son-dakika?kamera_id=1` | Last minute measurement in API format |
+| GET | `/canli/{kamera_id}` | Last 10 instant measurements |
+| GET | `/api/canli-veri?kamera_id=1` | Live data in API format |
+| GET | `/tum-dakikalar/{kamera_id}` | All minute records |
+| GET | `/saatlik-rapor/{kamera_id}?tarih=2025-01-01` | Hourly summary |
+| GET | `/gunluk-rapor/{kamera_id}?baslangic=...&bitis=...` | Daily report |
+| GET | `/veri-export/{kamera_id}?format=csv` | CSV/JSON data export |
 
-### Araç Takibi
+### Vehicle Tracking
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/api/arac-video-stream?kaynak=URL` | MJPEG canlı video akışı |
-| GET | `/api/arac-istatistik-stream?kaynak=URL` | SSE istatistik akışı |
-| DELETE | `/api/arac-stream-durdur?kaynak=URL` | Stream durdur ve kaydet |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/arac-video-stream?kaynak=URL` | MJPEG live video stream |
+| GET | `/api/arac-istatistik-stream?kaynak=URL` | SSE statistics stream |
+| DELETE | `/api/arac-stream-durdur?kaynak=URL` | Stop stream and save |
 
-### Trafik Yoğunluk
+### Traffic Density
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/api/trafik-stream?kaynak=URL` | MJPEG trafik analiz akışı |
-| GET | `/api/trafik-istatistik-stream?kaynak=URL` | SSE trafik istatistik akışı |
-| DELETE | `/api/trafik-stream-durdur?kaynak=URL` | Trafik stream durdur |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/trafik-stream?kaynak=URL` | MJPEG traffic analysis stream |
+| GET | `/api/trafik-istatistik-stream?kaynak=URL` | SSE traffic statistics stream |
+| DELETE | `/api/trafik-stream-durdur?kaynak=URL` | Stop traffic stream |
 
-### Hava Durumu
+### Weather Condition
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/hava-durumu/{kamera_id}` | Bir kameranın son hava durumu |
-| GET | `/hava-durumu-gecmis/{kamera_id}?tarih=...` | Günlük hava durumu geçmişi |
-| GET | `/hava-durumu-tum-kameralar` | Tüm kameraların son durumu |
-| GET | `/api/hava-durumu/son?kamera_id=1` | API formatında son durum |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/hava-durumu/{kamera_id}` | Latest weather condition of a camera |
+| GET | `/hava-durumu-gecmis/{kamera_id}?tarih=...` | Daily weather condition history |
+| GET | `/hava-durumu-tum-kameralar` | Latest status of all cameras |
+| GET | `/api/hava-durumu/son?kamera_id=1` | Latest status in API format |
 
-### Plaka
+### License Plate
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| POST | `/plaka/isle` | Görüntü yükle, plakaları oku |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/plaka/isle` | Upload image, read plates |
 
-### Sistem
+### System
 
-| Method | Endpoint | Açıklama |
-|--------|----------|----------|
-| GET | `/` | API bilgileri ve endpoint listesi |
-| DELETE | `/veri-temizle/{gun}` | Eski kayıtları arka planda temizle |
-
----
-
-## Veritabanı Şeması
-
-```
-kameralar           → Kayıtlı kamera tanımları (RTSP URL, konum, durum)
-dakikalik_olculer   → Dakika bazlı kişi sayımı (toplam, ort, maks, min, detaylar JSONB)
-anlik_olcumler      → 10 saniyede bir anlık kişi sayısı
-hava_durumu         → Kamera başına hava/görüş koşulu kayıtları
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information and endpoint list |
+| DELETE | `/veri-temizle/{gun}` | Clean up old records in the background |
 
 ---
 
-## Mimari Genel Bakış
+## Database Schema
+
+```
+kameralar           → Registered camera definitions (RTSP URL, location, status)
+dakikalik_olculer   → Minute-based people count (total, avg, max, min, details JSONB)
+anlik_olcumler      → Instantaneous person count every 10 seconds
+hava_durumu         → Weather/visibility condition records per camera
+```
+
+---
+
+## Architecture Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    api.py (FastAPI :8000)                     │
-│  /kameralar  /canli  /saatlik  /arac-stream  /trafik-stream  │
-│  /hava-durumu  /plaka  /veri-export                          │
+│                  api.py (FastAPI :8000)                      │
+│   /kameralar  /canli  /saatlik  /arac-stream  /trafik-stream │
+│   /hava-durumu  /plaka  /veri-export                         │
 └────────┬──────────┬──────────┬──────────┬────────────────────┘
          │          │          │          │
-    ┌────┘   ┌──────┘   ┌──────┘   ┌──────┘
-    ▼        ▼          ▼          ▼
- Kişi     StreamWorker TrafikWorker  Plaka
- Sayımı   (araç, MJPEG) (trafik,MJPEG) Sistemi
- (YOLO)   (thread)    (thread)     (2x YOLO)
-    │        │          │          │
-    └────────┴──────────┴──────────┘
-                    │
-              PostgreSQL
-           (belediye_kamera_db)
+    ┌────┘     ┌────┘     ┌────┘     ┌────┘
+    ▼          ▼          ▼          ▼
+ People     StreamWorker TrafikWorker Plate
+Counting   (vehicle,MJPEG)(traffic,MJPEG) System
+ (YOLO)     (thread)   (thread)     (2x YOLO)
+    │          │          │          │
+    └──────────┴──────────┴──────────┘
+                        │
+                    PostgreSQL
+               (belediye_kamera_db)
 ```
 
-Tüm stream worker'ları arka plan thread'lerinde bağımsız çalışır. API'nin async loop'u bloklanmaz. Her kaynak URL için tek bir worker örneği çalışır; birden fazla istemci aynı stream'i paylaşır.
+All stream workers run independently in background threads. The API's async loop is non-blocking. A single worker instance runs for each source URL; multiple clients share the same stream.
 
 ---
 
-## Lisans
+## License
 
-Bu proje eğitim amaçlı geliştirilmiştir.
+This project was developed for educational purposes.
